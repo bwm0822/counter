@@ -18,9 +18,11 @@
     <style>
 
         /* For tablet */
-        @media only screen and (max-device-width: 1023px)
+        @media (min-device-width: 1024px) or (min-device-height: 1024px)
         {
-            @media (orientation: portrait)
+
+            /* For portrait */
+            @media (min-device-aspect-ratio: 1)
             {
                 :root
                 {
@@ -28,37 +30,41 @@
                 }
             }
 
-            @media (orientation: landscape)
+            /* For landscape */  
+            @media (max-device-aspect-ratio: 1)
             {
                 :root
                 {
-                    --font-size: 48px;
+                    --font-size: 32px;
                 }
             }
         }
 
         /* For mobile phone */      
-        @media only screen and (max-device-width: 800px)
+        @media (max-device-width: 1024px) and (max-device-height: 1024px)
         {
-            @media (orientation: portrait)
+
+            /* For portrait */
+            @media (min-device-aspect-ratio: 1)
             {
                 :root
                 {
-                    --font-size: 24px;
+                    --font-size: 16px;
                 }
             }
 
-            @media (orientation: landscape)
+            /* For landscape */  
+            @media (max-device-aspect-ratio: 1)
             {
                 :root
                 {
-                    --font-size: 24px;
+                    --font-size: 40px;
                 }
             }
         }
 
         /* For desktop */
-        @media only screen and (min-device-width: 1024px)
+        @media only screen and (min-device-width: 1024px) and (min-device-aspect-ratio: 1.5)
         {
             :root
             {
@@ -99,6 +105,7 @@
 
         #speed
         {
+            font-size: 2rem;
             background-color: gray;
             color: white;
         }
@@ -188,6 +195,8 @@
             let htmlStyle = getComputedStyle(document.documentElement);
             let fontSize = htmlStyle.getPropertyValue('--font-size');
             console.log('fontSize:',fontSize);
+            console.log("Screen width: " + window.screen.width);
+            console.log("Screen height: " + window.screen.height);
         }
 
 
