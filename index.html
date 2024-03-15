@@ -16,6 +16,61 @@
 </head>
 <body ontouchstart> <!--當用戶在移動設備上觸摸屏幕時，ontouchstart 事件會觸發。-->
     <style>
+
+        /* For tablet */
+        @media only screen and (max-device-width: 1023px)
+        {
+            @media (orientation: portrait)
+            {
+                :root
+                {
+                    --font-size: 32px;
+                }
+            }
+
+            @media (orientation: landscape)
+            {
+                :root
+                {
+                    --font-size: 48px;
+                }
+            }
+        }
+
+        /* For mobile phone */      
+        @media only screen and (max-device-width: 800px)
+        {
+            @media (orientation: portrait)
+            {
+                :root
+                {
+                    --font-size: 24px;
+                }
+            }
+
+            @media (orientation: landscape)
+            {
+                :root
+                {
+                    --font-size: 24px;
+                }
+            }
+        }
+
+        /* For desktop */
+        @media only screen and (min-device-width: 1024px)
+        {
+            :root
+            {
+                --font-size: 16px;
+            }
+        }
+
+        html
+        {
+            font-size: var(--font-size);
+        }
+
         .main
         {
             display: flex;
@@ -62,7 +117,7 @@
 
         #start, #stop
         {
-            font-size: 50px;
+            font-size: 3rem;
             color: skyblue;
             margin: 0 1rem 0 1rem;
         }
@@ -125,7 +180,16 @@
         window.onload = function()
         {
             console.log('window.onload');
+            debug();
         }
+
+        function debug()
+        {
+            let htmlStyle = getComputedStyle(document.documentElement);
+            let fontSize = htmlStyle.getPropertyValue('--font-size');
+            console.log('fontSize:',fontSize);
+        }
+
 
         function changeSpeed()
         {
