@@ -1,0 +1,14 @@
+{
+    "name": "counter",
+    "short_name": "counter",
+    "start_url": "",
+    "display": "standalone",
+    "icons": [
+      {
+        "src": "/static/icon.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ]
+  }
+  

@@ -13,8 +13,9 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
     -->
     <!-- <link rel="stylesheet" href="{% static 'css/style.css' %}"> -->
+    <link rel="manifest" href="/manifest.json" />
 </head>
-<body ontouchstart> <!--當用戶在移動設備上觸摸屏幕時，ontouchstart 事件會觸發。-->
+<body><!-- ontouchstart="" ontouchend=""> 當用戶在移動設備上觸摸屏幕時，ontouchstart 事件會觸發。-->
     <style>
 
         /* For tablet */
@@ -129,7 +130,7 @@
             margin: 0 1rem 0 1rem;
         }
 
-        #start:hover, #stop:hover
+        #start:active, #stop:active
         {
             color: darkslateblue;
         }
@@ -141,7 +142,7 @@
             margin: 0 1rem 0 1rem;
         }
 
-        #plus:hover, #dash:hover
+        #plus:active, #dash:active
         {
             color: darkslateblue;
         }
@@ -161,9 +162,14 @@
             <label>&nbsp;次</label>
         </div>
         <div class="block">
+            <!--
             <label id="plus" onmousedown="mousedown(60)" onmouseup="mouseup(60)"><i class="bi bi-plus-circle"></i></label>
             <label id="timer">00:00:00</label>
             <label id="dash" onmousedown="mousedown(-60)" onmouseup="mouseup(-60)"><i class="bi bi-dash-circle"></i></label>
+            -->
+            <label id="plus" onclick="tap(60)"><i class="bi bi-plus-circle"></i></label>
+            <label id="timer">00:00:00</label>
+            <label id="dash" onclick="tap(-60)"><i class="bi bi-dash-circle"></i></label>
         </div>
         <div class="block">
             <label id="counter">0</label>
@@ -181,8 +187,8 @@
         let _interval = 1000*60/_speed;
         let _run = false;
         let _time = 0;
-        let _beep = new Audio('stop-13692.mp3');
-        let _click = new Audio('start-13691.mp3');
+        let _beep = new Audio('static/stop-13692.mp3');
+        let _click = new Audio('static/start-13691.mp3');
 
         window.onload = function()
         {
@@ -208,6 +214,14 @@
             //console.log('speed = ', _speed, ', interval = ', _interval);
             pause();
             speak('每分鐘'+_speed+'次');
+        }
+
+        function tap(delta)
+        {
+            let timer = $('#timer');
+            _click.play();
+            _time = Math.max(0, _time+delta); 
+            timer.text(formatTime(_time));
         }
 
         function mousedown(delta) 
