@@ -72,11 +72,15 @@ class Ctrl
         this._skip = false;
     }
 
+    sfxBeep() {this._beep.play();}
+    sfxClick() {this._click.play();}
+
     // edit
     change(e)
     {
         this._data.type = e.target.value;
         this.update(this._data);
+        this.sfxClick();
     }
 
     speed()
@@ -90,6 +94,7 @@ class Ctrl
         this._lb_speed.text(this._speed);
         this._data.speed = this._speed;
         this.update(this._data);
+        this.sfxClick();
     }
 
     delta()
@@ -101,6 +106,7 @@ class Ctrl
             case 60: this._d = 1; break;
         }
         this._lb_delta.text(this.fmt(this._d));
+        this.sfxClick();
     }
 
     fmt(delta)
@@ -115,6 +121,7 @@ class Ctrl
         this._sec = this._data.sec;
         this._lb_time.text(formatTime(this._data.sec)); 
         this.update(this._data);
+        this.sfxClick();
     }
 
     minus()
@@ -124,6 +131,7 @@ class Ctrl
         this._sec = this._data.sec;
         this._lb_time.text(formatTime(this._data.sec)); 
         this.update(this._data);
+        this.sfxClick();
     }
 
     async update()
@@ -170,7 +178,7 @@ class Ctrl
         this._counter = setInterval(async()=>{
             if(this._data.type == '跳躍') 
             {
-                this._beep.play();
+                this.sfxBeep();
                 if(this._sec > 5 && cnt <= 0)
                 {
                     cnt = this._speed * 5;
@@ -185,6 +193,7 @@ class Ctrl
     async play()
     {
         if(this._skip) {return}
+        this.sfxClick();
         this._skip = true;
 
         this.speak();
@@ -208,29 +217,37 @@ class Ctrl
     pause()
     {
         if(this._skip) {return}
+        this.sfxClick();
 
         this._btn_pause.hide();
         this._btn_play.show();
-        clearInterval(this._timer);
-        clearInterval(this._counter);
+        this.stopInterval();
         Utility.speak('暫停');
     }
 
     stop()
     {
         if(this._skip) {return}
+        this.sfxClick();
 
-        clearInterval(this._timer);
-        clearInterval(this._counter);
+        this.stopInterval();
         this.hide();
         Schedule.stop();
         Utility.speak('停止');
+    }
+
+    stopInterval()
+    {
+        clearInterval(this._timer);
+        clearInterval(this._counter);
     }
 
     async show(data, play=false)
     {
         this._skip = false;
         this._page.show();
+
+        this.stopInterval();
 
         this._btn_pause.hide();
         this._btn_play.show();
@@ -246,6 +263,7 @@ class Ctrl
     hide()
     {
         this._page.hide();
+        this.stopInterval();
     }
 
     static hide()
@@ -283,7 +301,10 @@ class Schedule
         this._sche;
         this._idx;
         this._selected;
+        this._click = new Audio('static/start-13691.mp3');
     }
+
+    sfxClick() {this._click.play();}
 
     btn_add()
     {
@@ -296,6 +317,7 @@ class Schedule
         });
 
         this._list.append(group);
+        this.sfxClick();
     }
 
 
@@ -316,13 +338,39 @@ class Schedule
     select_item(target, data)
     {
         //console.log(data);
-        if(this._selected){this._selected.css('background-color','');}
-        this._selected = target;
-        console.log(target);
-        target.css('background-color','lightgreen');
-        this._idx = this._sche.indexOf(data);
-        Ctrl.show(data);
-       
+        this.sfxClick();
+
+        if(this.select(target))
+        {
+            this._idx = this._sche.indexOf(data);
+            Ctrl.show(data);
+        }
+        else
+        {
+            Ctrl.hide();
+        }
+
+        // if(target.attr('seleted'))
+        // {
+        //     target.css('background-color','');
+        //     target.removeAttr('seleted');
+        //     this._selected = null;
+        //     Ctrl.hide();
+        // }
+        // else
+        // {
+        //     if(this._selected)
+        //     {
+        //         this._selected.css('background-color','');
+        //         this._selected.removeAttr('seleted');
+        //     }
+        //     this._selected = target;
+        //     this._selected.css('background-color','lightgreen');
+        //     this._selected.attr('seleted',true);
+        //     this._idx = this._sche.indexOf(data);
+        //     Ctrl.show(data);
+        // }
+
     }
 
     async delete(e, data)
@@ -331,6 +379,7 @@ class Schedule
         await scheDelete(data);
         this.show_items();
         Ctrl.hide();
+        this.sfxClick();
     }
 
     update(data)
@@ -342,6 +391,7 @@ class Schedule
     stop()
     {
         if(this._selected){this._selected.css('background-color','');}
+        this._selected.removeAttr('seleted');
         this._selected = null;
     }
 
@@ -359,23 +409,49 @@ class Schedule
     next()
     {
          this._idx++;
+         this.unselect();
          if(this._idx < this._sche.length)
          {
-            this._selected.css('background-color','');
-            this._selected = this._list.children().eq(this._idx);
-            this._selected.css('background-color','lightgreen');
+            this.select(this._list.children().eq(this._idx));
             Ctrl.show(this._sche[this._idx], true);
             // Scroll the item into the center of the view
             this._selected[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
          }
          else
          {
-            this._selected.css('background-color','');
-            this._selected = null;
             Ctrl.hide();
             console.log('end');
             Utility.speak('結束');
          }
+    }
+
+    unselect()
+    {
+        if(this._selected)
+        {
+            this._selected.css('background-color','');
+            this._selected.removeAttr('seleted');
+            this._selected = null;
+        }
+    }
+
+    select(target)
+    {
+        if(target.attr('seleted'))
+        {
+            this.unselect();
+            return false;
+        }
+        else if(this._selected)
+        {
+            this.unselect();
+        }
+        
+        this._selected = target;
+        this._selected.css('background-color','lightgreen');
+        this._selected.attr('seleted',true);
+        return true;
+        
     }
 
     async show()
