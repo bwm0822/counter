@@ -68,6 +68,8 @@ class Ctrl
         this._beep = new Audio('static/stop-13692.mp3');
         this._click = new Audio('static/start-13691.mp3');
         this._skip = false;
+        this._tony = ['阿屎別摸魚','阿屎跳高一點'];
+        this._abbie = ['阿皮跳快一點','阿皮跳高一點'];
     }
 
     sfxBeep() {this._beep.play();}
@@ -150,15 +152,16 @@ class Ctrl
 
     startTimer()
     {
-        let cnt = 60 * 5;
+        let interval = 60 * 3;
+        let cnt = interval;
         this._timer = setInterval(async()=>{
             this._sec--;
             this._lb_time.text(formatTime(this._sec));
-            if(this._sec > 5 && cnt <= 0)
+            if(this._data.type == '跳躍' && this._sec > 5 && cnt <= 0)
             {
-                cnt = 60 * 5;
-                Utility.speak('阿屎跳高一點');
-                Utility.speak('阿皮跳快一點');
+                cnt = interval;
+                Utility.speak(this._tony[Math.floor(Math.random()*this._tony.length)]);
+                Utility.speak(this._abbie[Math.floor(Math.random()*this._abbie.length)])    ;
             }
             else if(cnt > 0) {cnt--;}
             
