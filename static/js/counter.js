@@ -63,10 +63,8 @@ class Ctrl
         this._timer;
         this._counter;
         this._data;
-        this._d=60;
-        this._speed=60;
         this._interval=1000;
-        this._td=1;
+        this._d=60;
         this._beep = new Audio('static/stop-13692.mp3');
         this._click = new Audio('static/start-13691.mp3');
         this._skip = false;
@@ -85,14 +83,13 @@ class Ctrl
 
     speed()
     {
-        switch(this._speed)
+        switch(this._data.speed)
         {
-            case 60: this._speed = 70; break;
-            case 70: this._speed = 80; break;
-            case 80: this._speed = 60; break;
+            case 60: this._data.speed = 70; break;
+            case 70: this._data.speed = 80; break;
+            case 80: this._data.speed = 60; break;
         }
-        this._lb_speed.text(this._speed);
-        this._data.speed = this._speed;
+        this._lb_speed.text(this._data.speed);
         this.update(this._data);
         this.sfxClick();
     }
@@ -147,19 +144,27 @@ class Ctrl
         let [min,sec] = formatTime(this._sec).split(':').map((x)=>parseInt(x));
         let time = "";
         if(min){time += min+(sec?'分':'分鐘');} 
-        if(sec){time += sec+'秒'}; 
+        if(sec){time += sec<10&&min>0 ? '0'+sec+'秒':sec+'秒';}; 
         Utility.speak(type+time);
     }
 
     startTimer()
     {
+        let cnt = 60 * 5;
         this._timer = setInterval(async()=>{
             this._sec--;
             this._lb_time.text(formatTime(this._sec));
-            if(this._sec<=0)
+            if(this._sec > 5 && cnt <= 0)
             {
-                clearInterval(this._timer);
-                clearInterval(this._counter);
+                cnt = 60 * 5;
+                Utility.speak('阿屎跳高一點');
+                Utility.speak('阿皮跳快一點');
+            }
+            else if(cnt > 0) {cnt--;}
+            
+            if(this._sec <= 0)
+            {
+                this.stopInterval()
                 if(this._data.type == '休息')
                 {
                     Utility.speak('休息時間到');
@@ -172,21 +177,9 @@ class Ctrl
 
     startCounter()
     {
-        let cnt = this._speed*5;
-        this._interval = 1000*60/this._speed;
-
-        this._counter = setInterval(async()=>{
-            if(this._data.type == '跳躍') 
-            {
-                this.sfxBeep();
-                if(this._sec > 5 && cnt <= 0)
-                {
-                    cnt = this._speed * 5;
-                    Utility.speak('阿屎跳高一點');
-                    Utility.speak('阿皮跳快一點');
-                }
-                else if(cnt > 0) {cnt--;}   
-            }
+        this._interval = 1000*60/this._data.speed;
+        this._counter = setInterval(()=>{
+            if(this._data.type == '跳躍') {this.sfxBeep();}
         },this._interval);
     }
 
@@ -350,27 +343,6 @@ class Schedule
             Ctrl.hide();
         }
 
-        // if(target.attr('seleted'))
-        // {
-        //     target.css('background-color','');
-        //     target.removeAttr('seleted');
-        //     this._selected = null;
-        //     Ctrl.hide();
-        // }
-        // else
-        // {
-        //     if(this._selected)
-        //     {
-        //         this._selected.css('background-color','');
-        //         this._selected.removeAttr('seleted');
-        //     }
-        //     this._selected = target;
-        //     this._selected.css('background-color','lightgreen');
-        //     this._selected.attr('seleted',true);
-        //     this._idx = this._sche.indexOf(data);
-        //     Ctrl.show(data);
-        // }
-
     }
 
     async delete(e, data)
@@ -406,7 +378,7 @@ class Schedule
 
     }
 
-    next()
+    async next()
     {
          this._idx++;
          this.unselect();
@@ -419,9 +391,9 @@ class Schedule
          }
          else
          {
-            Ctrl.hide();
-            console.log('end');
             Utility.speak('結束');
+            await delay(1);
+            Ctrl.hide();
          }
     }
 
