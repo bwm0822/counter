@@ -354,19 +354,19 @@ class Utility
 
     static parse(text)
     {
-        // {f:}         :           <div style="display:flex;align-items:center"></div>
-        // {bWid:}      :           <div style="width:Wid></div>
-        // {BWid:}      :           <div style="width:Wid;text-align:center"></div>
+        // {f:txt}         :           <div style="display:flex;align-items:center">txt</div>
+        // {bWid:txt}      :           <div style="width:Wid>txt</div>
+        // {BWid:txt}      :           <div style="width:Wid;text-align:center">txt</div>
         
-        // (:color:)    :   顏色    <label style="color:color">
+        // (color:txt:)    :   顏色    <label style="color:color">txt</label>
 
-        // [pWid:]      :   發音    <span style="width:Wid></span> 
-        // [PWid:]      :   發音    <span style="width:Wid;text-align:center"></span> 
-        // [d:]         :   查字典  <span dict="true"></span> 
-        // [m:]         :   標記    <small class="mark"></small> 
-        // [iWid:]      :   輸入    <input style="width:Wid">
+        // [pWid:txt]      :   發音    <span style="width:Wid>txt</span> 
+        // [PWid:txt]      :   發音    <span style="width:Wid;text-align:center">txt</span> 
+        // [d:txt]         :   查字典  <span dict="true">txt</span> 
+        // [m:txt]         :   標記    <small class="mark">txt</small> 
+        // [iWid:txt]      :   輸入    <input style="width:Wid" answer="txt">
 
-        // !\n          :           刪除換行
+        // !\n             :   刪除換行
 
         if(text == null){return '';}
 

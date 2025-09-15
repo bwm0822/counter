@@ -22,11 +22,16 @@ class Ctrl
         this._page = new $(`
             <div class="page-ctrl">
                 <div class="type">
-                    <select>
+                    <select name="type">
                         <option value="跳躍">跳躍</option>
                         <option value="休息">休息</option>  
                     </select>
-                    <div><label name="speed" class="btn">60</label><sub>/分</sub></div>
+                    <select name="mode">
+                        <option value="60">60/分</option>
+                        <option value="70">70/分</option>
+                        <option value="80">80/分</option>
+                        <option value="混合">混合</option>
+                    </select>
                     <sub name="delta">60</sub>
                 </div>
                 <hr>
@@ -46,11 +51,11 @@ class Ctrl
         `);
         this._page.appendTo(document.body);
         this._page.hide();
-        
-        this._type = this._page.find('select').on('change',(e)=>{this.change(e);});
+        this._type = this._page.find('select[name="type"]').on('change',(e)=>{this.change(e);});
         this._lb_delta = this._page.find('sub[name="delta"]').click(()=>{this.delta();});
         this._lb_time = this._page.find('label[name="time"]');
-        this._lb_speed = this._page.find('label[name="speed"]').click(()=>{this.speed();});
+        
+        this._mode = this._page.find('select[name="mode"]').on('change',(e)=>{this.mode(e);});
 
         this._page.find('.bi-dash-circle').click(()=>{this.minus();});
         this._page.find('.bi-plus-circle').click(()=>{this.plus();});
@@ -59,7 +64,7 @@ class Ctrl
         this._btn_pause.hide();
         this._btn_play = this._page.find('.bi-play-circle').click(()=>{this.play()});
         this._page.find('.bi-stop-circle').click(()=>{this.stop()});
-        this._sec;
+        this._remain;
         this._timer;
         this._counter;
         this._data;
@@ -70,6 +75,8 @@ class Ctrl
         this._skip = false;
         this._tony = ['阿屎別摸魚','阿屎跳高一點'];
         this._abbie = ['阿皮跳快一點','阿皮跳高一點'];
+        this._talk = ['像跳繩一樣，快速跳','正常跳','剩最後一分鐘了，跳快一點'];
+        this._fast, this._normal;
     }
 
     sfxBeep() {this._beep.play();}
@@ -83,15 +90,10 @@ class Ctrl
         this.sfxClick();
     }
 
-    speed()
+    mode(e)
     {
-        switch(this._data.speed)
-        {
-            case 60: this._data.speed = 70; break;
-            case 70: this._data.speed = 80; break;
-            case 80: this._data.speed = 60; break;
-        }
-        this._lb_speed.text(this._data.speed);
+        this._data.mode = e.target.value;
+        this.setSpeed();
         this.update(this._data);
         this.sfxClick();
     }
@@ -117,7 +119,7 @@ class Ctrl
     {
         let d = this._d;
         this._data.sec += d; 
-        this._sec = this._data.sec;
+        this._remain = this._data.sec;
         this._lb_time.text(formatTime(this._data.sec)); 
         this.update(this._data);
         this.sfxClick();
@@ -127,7 +129,7 @@ class Ctrl
     {
         let d = this._d;
         this._data.sec = Math.max(this._data.sec-d,0); 
-        this._sec = this._data.sec;
+        this._remain = this._data.sec;
         this._lb_time.text(formatTime(this._data.sec)); 
         this.update(this._data);
         this.sfxClick();
@@ -143,29 +145,60 @@ class Ctrl
     speak()
     {
         let type = this._data.type;
-        let [min,sec] = formatTime(this._sec).split(':').map((x)=>parseInt(x));
+        let [min,sec] = formatTime(this._remain).split(':').map((x)=>parseInt(x));
         let time = "";
         if(min){time += min+(sec?'分':'分鐘');} 
         if(sec){time += sec<10&&min>0 ? '0'+sec+'秒':sec+'秒';}; 
         Utility.speak(type+time);
     }
 
+    updateCounter()
+    {
+        if((this._data.sec-this._remain)%120===0)
+        {
+            this._fast = this._remain;
+            this._normal = this._remain - 60;
+            // console.log(this._remain,this._fast, this._normal);
+        }
+    }
+
+    setMode(mode)
+    {
+        this._data.speed = mode===0 ? 100 
+                                    : mode===1 ? 60 
+                                                : 100;
+        this.startCounter();
+        Utility.speak(this._talk[mode]);
+    }
+
+    setSpeed()
+    {
+        switch(this._data.mode)
+        {
+            case '60': this._data.speed=60; break;
+            case '70': this._data.speed=70; break;
+            case '80': this._data.speed=80; break;
+            case '混合': this._data.speed=100; break;
+        }
+    }
+
     startTimer()
     {
-        let interval = 60 * 3;
-        let cnt = interval;
         this._timer = setInterval(async()=>{
-            this._sec--;
-            this._lb_time.text(formatTime(this._sec));
-            if(this._data.type == '跳躍' && this._sec > 5 && cnt <= 0)
-            {
-                cnt = interval;
-                Utility.speak(this._tony[Math.floor(Math.random()*this._tony.length)]);
-                Utility.speak(this._abbie[Math.floor(Math.random()*this._abbie.length)])    ;
-            }
-            else if(cnt > 0) {cnt--;}
             
-            if(this._sec <= 0)
+            if(this._data.type == '跳躍' && this._data.mode == '混合')
+            {
+                this.updateCounter();
+                console.log(this._remain,this._fast, this._normal);
+                if(this._remain === 60) {this.setMode(2);}
+                else if(this._remain === this._fast) {this.setMode(0);}
+                else if(this._remain === this._normal) {this.setMode(1);}
+            }
+
+            this._remain--;
+            this._lb_time.text(formatTime(this._remain));
+
+            if(this._remain <= 0)
             {
                 this.stopInterval()
                 if(this._data.type == '休息')
@@ -181,6 +214,7 @@ class Ctrl
     startCounter()
     {
         this._interval = 1000*60/this._data.speed;
+        clearInterval(this._counter);
         this._counter = setInterval(()=>{
             if(this._data.type == '跳躍') {this.sfxBeep();}
         },this._interval);
@@ -197,7 +231,7 @@ class Ctrl
         this._btn_play.hide();
         await delay(1);
 
-        if(this._sec <= 0)
+        if(this._remain <= 0)
         {
             Schedule.next();
             return;
@@ -208,7 +242,6 @@ class Ctrl
         
         this._skip = false;
     }
-
 
     pause()
     {
@@ -249,10 +282,11 @@ class Ctrl
         this._btn_play.show();
 
         this._data = data;
-        this._sec = data.sec;
+        this._remain = data.sec;
         this._type.val(data.type);
         this._lb_time.text(formatTime(data.sec));
-        this._lb_speed.text(data.speed);
+        this._mode.val(data.mode);
+        this.setSpeed();
         if(play){this.play();}
     }
 
@@ -300,7 +334,7 @@ class Schedule
         this._click = new Audio('static/start-13691.mp3');
     }
 
-    sfxClick() {this._click.play();}
+    sfxClick() {this._click.play().catch(()=>{});}
 
     btn_add()
     {

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="user-scalable=no">
+    <!-- jquery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <!-- bootstrap icon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css"> 
+    <!-- bootstrap css -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+    <!-- bootstrap javascript
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz" crossorigin="anonymous"></script>
+    -->
+    <!-- <link rel="stylesheet" href="{% static 'css/style.css' %}"> -->
+    <link rel="stylesheet" href="static/css/common.css">
+    <link rel="manifest" href="manifest.json" />
+
+    <script src="static/js/idb.js"></script>
+    <script src="static/js/wrap-idb.js"></script>
+
+</head>
+<body ontouchstart=""> <!--當用戶在移動設備上觸摸屏幕時，ontouchstart事件會觸發。-->
+    <style>
+    </style>
+    
+    <title>Counter</title>
+    <div class="main">
+        <div class="block">
+            <label>每分鐘&nbsp;</label>
+            <select id="speed" onchange="changeSpeed()">
+                <option value=60>60</option>
+                <option value=70 selected>70</option>
+                <option value=80>80</option>
+                <option value=90>90</option>
+                <option value=100>100</option>
+            </select>
+            <label>&nbsp;次</label>
+        </div>
+        <div class="block">
+            <!--
+            <label id="plus" onmousedown="mousedown(60)" onmouseup="mouseup(60)"><i class="bi bi-plus-circle"></i></label>
+            <label id="timer">00:00:00</label>
+            <label id="dash" onmousedown="mousedown(-60)" onmouseup="mouseup(-60)"><i class="bi bi-dash-circle"></i></label>
+            -->
+            <label id="plus" onclick="tap(60)"><i class="bi bi-plus-circle"></i></label>
+            <label id="timer">00:00:00</label>
+            <label id="dash" onclick="tap(-60)"><i class="bi bi-dash-circle"></i></label>
+        </div>
+        <div class="block">
+            <label id="counter">0</label>
+        </div>
+        <div class="ctrl">
+            <label id="start" onclick="toggle()"><i class="bi bi-play-circle"></i></label>
+            <label id="stop" onclick="stop()"><i class="bi bi-stop-circle"></i></label>
+        </div>
+    </div>
+
+    <script>
+        let _iTimer = null, _iCounter = null, _iAuto = null;
+        let _update = false;
+        let _speed = 70;
+        let _interval = 1000*60/_speed;
+        let _run = false;
+        let _time = 0;
+        let _beep = new Audio('static/stop-13692.mp3');
+        let _click = new Audio('static/start-13691.mp3');
+
+        window.onload = function()
+        {
+            console.log('window.onload');
+            debug();
+        }
+
+        function debug()
+        {
+            let htmlStyle = getComputedStyle(document.documentElement);
+            let fontSize = htmlStyle.getPropertyValue('--font-size');
+            console.log('fontSize:',fontSize);
+            console.log("Screen width: " + window.screen.width);
+            console.log("Screen height: " + window.screen.height);
+        }
+
+
+        function changeSpeed()
+        {
+            let speed = $('#speed');
+            _speed = speed.val();
+            _interval = 1000*60/_speed;
+            //console.log('speed = ', _speed, ', interval = ', _interval);
+            pause();
+            speak('每分鐘'+_speed+'次');
+        }
+
+        function tap(delta)
+        {
+            let timer = $('#timer');
+            _click.play();
+            _time = Math.max(0, _time+delta); 
+            timer.text(formatTime(_time));
+        }
+
+        function mousedown(delta) 
+        {
+            let timer = $('#timer');
+            _click.play();
+            _update = true;
+            _iAuto = setInterval(function() {
+                _update = false;
+                _time = Math.max(0, _time+delta); 
+                timer.text(formatTime(_time));
+            }, 150);
+        }
+
+        function mouseup(delta)
+        {
+            let timer = $('#timer');
+            clearInterval(_iAuto); 
+            _iAuto = null;
+            if(_update){ _time = Math.max(0, _time+delta); timer.text(formatTime(_time)); }
+        } 
+
+        function dash() 
+        {
+            let timer = $('#timer');
+            _time = Math.max(0, _time-60);
+            timer.text(formatTime(_time));
+        }
+
+        function toggle() 
+        {
+            if (!_run) {start();} 
+            else {pause();}
+        }
+
+        function start() 
+        {
+            let start = $('#start');
+            if(!_run & _time > 0)
+            {
+                speak("開始");
+                _run = true;
+                startTimer();
+                startCounter();
+                start.html('<i class="bi bi-pause-circle"></i>');
+            }
+            else
+            {
+                speak("請設定時間");
+            }
+        }
+
+        function pause(isSpeak=true) 
+        {
+            let start = $('#start');
+            if(_run)
+            {
+                if(isSpeak) {speak("暫停");}
+                _run = false;
+                stopTimer();
+                stopCounter();
+                start.html('<i class="bi bi-play-circle"></i>');
+            }
+        }
+
+        function stop() 
+        {
+            speak("停止");
+            stopTimer();
+            stopCounter();
+            resetTimer();
+            resetCounter();
+            pause(false);
+        }
+
+        function resetTimer()
+        {
+            _time = 0;
+            let timer = $('#timer');
+            timer.text(formatTime(_time));
+        }
+
+        function decTimer()
+        {
+            let timer = $('#timer');
+            _time = Math.max(0, _time - 1);
+            timer.text(formatTime(_time));
+        }
+
+        function resetCounter()
+        {
+            let counter = $('#counter');
+            counter.text(0);
+        }
+
+        function incCounter()
+        {
+            let counter = $('#counter');
+            let value = parseInt(counter.text());
+            counter.text(value+1);
+        }
+
+        function startTimer()
+        {
+            _iTimer = setInterval(function() {
+                    decTimer();
+                    if(_time == 0)
+                    {
+                        speak('時間到');
+                        stopTimer();
+                        stopCounter();
+                        pause(false);
+                    }
+                }, 1000);
+        }
+
+        function stopTimer()
+        {
+            clearInterval(_iTimer);
+        }
+
+        function startCounter()
+        {
+            let speakRate = _speed/25;
+            _iCounter = setInterval(function() {
+                    incCounter();
+                    //speak('跳', 'zh-TW', speakRate);
+                    _beep.play();
+                }, _interval);
+        }
+
+        function stopCounter()
+        {
+            clearInterval(_iCounter);
+        }
+
+        function formatTime(seconds) 
+        {
+            let hours = Math.floor(seconds / 3600);
+            let minutes = Math.floor((seconds % 3600) / 60);
+            seconds = seconds % 60;
+
+            // 將小於10的數字轉換為兩位數
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+
+            return hours + ':' + minutes + ':' + seconds;
+        }
+
+        function speak(content, lang='zh-TW', rate=1)
+        {
+            if(content)
+            {
+                let utterance = new SpeechSynthesisUtterance(content);
+                utterance.lang = lang; //'zh-TW' 'en-US'; 
+                utterance.rate = rate; // 0.1 ~ 10
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+    </script>
+</body>
+</html>
